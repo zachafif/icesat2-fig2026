@@ -31,7 +31,9 @@ bound_sf<-st_transform(bound_sf,32749)
 bound_sf<-st_buffer(bound_sf,200)
 tr.sf=st_read(transect.dir)
 demnas=rast(demnas.dir)
+demnas=terra::project(demnas,"EPSG:32749")
 als=rast(als.dir)
+als=terra::project(als,"EPSG:32749")
 
 #Convert tabular to spatial
 sf=sf_multipoint(
@@ -49,7 +51,7 @@ sf<-st_transform(sf,32749)
 Q1 <- quantile(df$h_te_median,.25)
 Q3 <- quantile(df$h_te_median, .75)
 IQR <- IQR(df$h_te_median)
-filter_sf <- subset(sf, sf$h_te_median> (Q1 - 2*IQR) & sf$h_te_median< (Q3 + 2*IQR))
+filter_sf <- subset(sf, sf$h_te_median> (Q1 - 1.5*IQR) & sf$h_te_median< (Q3 + 1.5*IQR))
 
 #Add Orthometric Height
 egm_sf=extract(egm.p,vect(filter_sf))
@@ -137,3 +139,13 @@ plot.dns <- ggplot(sample.df,aes(x=als, y=dns)) +
 grid.arrange(plot.ics+ theme(plot.title = element_text(hjust = 0.5)),
              plot.dns+ theme(plot.title = element_text(hjust = 0.5)),
              ncol=2)
+
+#Compare Difference between products
+ics.rsp=resample(krg_raster.1,als)
+dns.rsp=resample(demnas,als)
+
+plot(als-ics.rsp)
+title("DTM Difference - ALS VS ICESat-2")
+
+plot(als-dns.rsp)
+title("DTM Difference - ALS VS DEMNAS")
